@@ -15,25 +15,17 @@ function main {
 
 ### error handling
 
-if ! command -v ffmpeg &> /dev/null; then
-    echo "ffmpeg is not installed"
-elif ! command  -v ffprobe &> /dev/null; then
-    echo "ffprobe is not installed"
+if [ ! -d ./m2ts ]; then mkdir m2ts; fi
+if [ ! -d ./mp4 ]; then mkdir mp4; fi
+
+if ! command -v ffmpeg &> /dev/null; then echo "ffmpeg is not installed"
+elif ! command  -v ffprobe &> /dev/null; then echo "ffprobe is not installed"
 fi
 
 if [[ $( \ls | wc -l ) = 0 ]]; then :
-elif [[ $( \ls | wc -l ) < 1 ]]; then
-    echo "too many files in source folder"
-else
-    if [ ! -f *.m2ts ]; then :
-    else main
-    fi
+elif [[ $( \ls | wc -l ) < 1 ]]; then echo "too many files in source folder"
+else if [ ! -f *.m2ts ]; then :; else main; fi
 fi
-
-ND1="mp4 folder does not exist"
-if [ -d ./mp4 ]; then :; else echo $ND1; fi
-ND2="m2ts folder does not exist"
-if [ -d ./m2ts ]; then :; else echo $ND2; fi
 
 ### function calls
 
