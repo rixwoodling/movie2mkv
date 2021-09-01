@@ -1,7 +1,7 @@
 #!/bin/bash
 # m2ts2mkv v1
 
-
+# automatically convert all streams of a movie file into mkv
 
 ### functions ###
 
