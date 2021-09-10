@@ -38,7 +38,7 @@ fi
 
 # define crop dimensions and assign to options variable
 vfcrop=$( ffmpeg -i "$1" -t 5 -vf cropdetect -f null - 2>&1 | awk '/crop/ { print $NF }' | tail -1 )
-options=$( echo -n "-analyzeduration 1000000000 -pix_fmt + -vf \""$vfcrop$deint"\" -map_metadata 0 -vsync vfr " )
+options=$( echo -n "-probesize 100M -analyzeduration 100M -pix_fmt + -vf \""$vfcrop$deint"\" -map_metadata 0 -vsync vfr " )
 
 # assign video options to videostream variable
 v=0
