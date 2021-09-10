@@ -31,9 +31,7 @@ map=()
 
 # define if deinterlacing is required
 deint=$( ffmpeg -hide_banner -filter:v idet -frames:v 100 -an -f rawvideo -y /dev/null -i "$1" 2>&1 | grep -m 1 BFF | sed 's/.*TFF\:\ *//' | sed 's/[^0-9].*//' )
-if [ "$deint" -eq 0 ]; then
-    deint=$( echo -n "" )
-elif [ ! "$deint" -eq 0 ]; then
+if [ ! "$deint" -eq 0 ]; then
     deint=$( echo -n ", bwdif=mode=0" )
 else deint=$( echo -n "" )
 fi
