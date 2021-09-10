@@ -91,6 +91,6 @@ maps="${map[@]}"
 echo -n "ffmpeg -i $1 "; echo -n "$options"; echo -n "$maps"; echo -n "$videostream"
 echo -n "$audiostreams"; echo -n "$subtitlestreams"; echo -n "$1.mkv"; echo
 
-# ffmpeg -i $1 $options $maps $videostream $audiostreams $subtitlestreams $1.mkv
+ffmpeg -i $1 $options $maps $videostream $audiostreams $subtitlestreams $1.mkv
 
 
