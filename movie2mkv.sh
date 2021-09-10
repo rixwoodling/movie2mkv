@@ -32,13 +32,13 @@ map=()
 # define if deinterlacing is required
 deint=$( ffmpeg -hide_banner -filter:v idet -frames:v 100 -an -f rawvideo -y /dev/null -i "$1" 2>&1 | grep -m 1 BFF | sed 's/.*TFF\:\ *//' | sed 's/[^0-9].*//' )
 if [ ! "$deint" -eq 0 ]; then
-    deint=$( echo -n ", bwdif=mode=0" )
+    deint=$( echo -n "-vf bwdif=mode=0" )
 else deint=$( echo -n "" )
 fi
 
 # define crop dimensions and assign to options variable
 vfcrop=$( ffmpeg -i "$1" -t 5 -vf cropdetect -f null - 2>&1 | awk '/crop/ { print $NF }' | tail -1 )
-options=$( echo -n "-probesize 100M -analyzeduration 100M -pix_fmt + -vf \""$vfcrop$deint"\" -map_metadata 0 -vsync vfr " )
+options=$( echo -n "-probesize 100M -analyzeduration 100M -pix_fmt + -vf "$vfcrop $deint "-map_metadata 0 -vsync vfr " )
 
 # assign video options to videostream variable
 v=0
