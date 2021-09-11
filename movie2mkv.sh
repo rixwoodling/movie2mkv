@@ -1,5 +1,5 @@
 #!/bin/bash
-# m2ts2mkv v3
+# movie2mkv v3
 
 # automatically convert or copy all streams of a movie file into mkv
 
@@ -54,7 +54,7 @@ videostream="${vid[@]}"
 a=0
 aud=()
 while true; do
-    audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries stream=index -of default=noprint_wrappers=1:nokey=1 "$1" )
+    audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries program_stream=index -of default=noprint_wrappers=1:nokey=1 "$1" )
     if [[ ! -z $audiostreams ]]; then
         aud+=$( echo -n "-ac $audiostreams " )
         map+=$( echo -n "-map 0:a:$a " )
