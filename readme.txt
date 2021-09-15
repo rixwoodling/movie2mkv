@@ -19,7 +19,7 @@ limitations at this time:
 - no batch converting
 - not tested for audio files only but possible
 
-This script takes all of the guesswork out of converting high resolution video down to a smaller compression. There are no options or settings to monkey with. Simply execute the command plus the movie as an agrument you wish to convert. 
+This script takes all of the guesswork out of converting high resolution video down to a smaller compression. There are no options or settings to monkey with. Simply execute the command plus the movie as an argument you wish to convert. 
 
 Submit all issues and requests to: https://github.com/rixwoodling/movie2mkv/issues
 
