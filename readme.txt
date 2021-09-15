@@ -12,7 +12,6 @@ features:
 + converts all audio streams maintaining original channels
 + copies over all embedded subtitle tracks
 + copies over all metadata from source video
-+ able to play video while downloading
 
 limitations at this time:
 - not best for .avi and other low source videos
