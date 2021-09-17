@@ -1,5 +1,5 @@
 #!/bin/bash
-# movie2mkv v3
+# movie2mkv v4
 
 # automatically convert or copy all streams of a movie file into mkv
 
@@ -50,18 +50,26 @@ while [ ! "$v" -eq 1 ]; do
 done
 videostream="${vid[@]}"
 
-# loop through audio streams in file and assign back to audiostream variable
+# loop through audio streams and either convert or copy back to audiostream variable(s)
 a=0
+f=1
 aud=()
 while true; do
-    audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries stream=index -of default=noprint_wrappers=1:nokey=1 "$1" )
-    if [[ ! -z $audiostreams ]]; then
-        aud+=$( echo -n "-ac $audiostreams " )
-        map+=$( echo -n "-map 0:a:$a " )
+    audioformat=$( ffmpeg -filter:v idet -frames:v 100 -f rawvideo -y /dev/null -i "$1" 2>&1 | grep "Audio:\ *" | grep "#0:"$f | awk '{print $4}' | sed 's/[^a-zA-Z0-9]//g' )
+    if [[ ! -z $audioformat ]]; then
+        if [[ "$audioformat" == "dts" || "$audioformat" == "ac3" || "$audioformat" == "flac" ]]; then
+            aud+=$( echo -n '-c:a:'$a' copy ' )
+            map+=$( echo -n '-map 0:a:'$a' ' )
+        else
+            audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries stream=index -of default=noprint_wrappers=1:nokey=1 "$1" )
+            aud+=$( echo -n '-ac '$audiostreams' ' )
+            map+=$( echo -n '-map 0:a:'$a' ' )
+        fi
     else
         break
     fi
     a=$(( a + 1 ))
+    f=$(( f + 1 ))
 done
 audiostreams="${aud[@]}"
 
