@@ -1,4 +1,4 @@
-movie2mkv v3
+movie2mkv v4
 
 Automatically convert all streams of a movie file into an mkv.
 
@@ -9,7 +9,7 @@ features:
 + deinterlaces automatically when detected
 + crops out detected black bars from letterboxing 
 + converts 1 video stream providing visually lossless picture
-+ converts all audio streams maintaining original channels
++ copies over ac3, dts, or flac streams otherwise converts audio preserving channels
 + copies over all embedded subtitle tracks
 + copies over all metadata from source video
 
@@ -37,13 +37,13 @@ Here is the target information of all streams:
    
    7.69 GB
    0 h264 video 1536 1040 yuv420p N/A 
-   1 vorbis audio 48000 2 stereo tgl 
-   2 vorbis audio 48000 2 stereo eng 
+   1 flac audio 48000 2 stereo tgl 
+   2 ac3 audio 48000 2 stereo eng 
    3 hdmv_pgs_subtitle subtitle eng 
 
 This script produces a quality archive at about 25% of the original size.
 Notice the resolution after is the result of the crop detection and colorspace is preserved.
-Audio is converted to vorbis and all channels are maintained.
+Audio is copied over since they were flac and ac3.
 Subtitles are copied over and left untouched.
 
 ---
