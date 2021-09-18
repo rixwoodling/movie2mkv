@@ -1,5 +1,5 @@
 #!/bin/bash
-# movie2mkv v4
+# movie2mkv v5
 
 # automatically convert or copy all streams of a movie file into mkv
 
@@ -37,7 +37,7 @@ else deint=$( echo -n "" )
 fi
 
 # define crop dimensions and assign to options variable
-vfcrop=$( ffmpeg -i "$1" -t 5 -vf cropdetect -f null - 2>&1 | awk '/crop/ { print $NF }' | tail -1 )
+vfcrop=$( ffmpeg -i "$1" -t 300 -vf cropdetect -f null - 2>&1 | awk '/crop/ { print $NF }' | tail -1 )
 options=$( echo -n "-probesize 100M -analyzeduration 100M -pix_fmt + -vf "$vfcrop $deint "-map_metadata 0 -vsync vfr " )
 
 # assign video options to videostream variable
@@ -50,6 +50,8 @@ while [ ! "$v" -eq 1 ]; do
 done
 videostream="${vid[@]}"
 
+
+
 # loop through audio streams and either convert or copy back to audiostream variable(s)
 a=0
 f=1
@@ -57,11 +59,11 @@ aud=()
 while true; do
     audioformat=$( ffmpeg -filter:v idet -frames:v 100 -f rawvideo -y /dev/null -i "$1" 2>&1 | grep "Audio:\ *" | grep "#0:"$f | awk '{print $4}' | sed 's/[^a-zA-Z0-9]//g' )
     if [[ ! -z $audioformat ]]; then
-        if [[ "$audioformat" == "dts" || "$audioformat" == "ac3" || "$audioformat" == "flac" ]]; then
+        if [[ "$audioformat" == "dtsx" || "$audioformat" == "ac3x" || "$audioformat" == "flacx" ]]; then
             aud+=$( echo -n '-c:a:'$a' copy ' )
             map+=$( echo -n '-map 0:a:'$a' ' )
         else
-            audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries stream=index -of default=noprint_wrappers=1:nokey=1 "$1" )
+            audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries stream=channels -of default=noprint_wrappers=1:nokey=1 "$1" )
             aud+=$( echo -n '-ac '$audiostreams' ' )
             map+=$( echo -n '-map 0:a:'$a' ' )
         fi
@@ -72,6 +74,8 @@ while true; do
     f=$(( f + 1 ))
 done
 audiostreams="${aud[@]}"
+
+
 
 # loop through subtitle streams and assign back to subtitlestream variable
 s=0
