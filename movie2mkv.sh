@@ -44,7 +44,7 @@ options=$( echo -n "-probesize 100M -analyzeduration 100M -pix_fmt + -vf "$vfcro
 v=0
 vid=()
 while [ ! "$v" -eq 1 ]; do
-    vid+=$( echo -n '-c:v libx264 -b:v:'$v' 8M -tune film -vprofile high -vlevel 4.0 -movflags faststart ' )
+    vid+=$( echo -n '-c:v libx264 -b:v:'$v' 8M -tune film -vprofile high -vlevel 4.0 ' )
     map+=$( echo -n "-map 0:v:$v " )
     v=$(( v + 1 ))
 done
