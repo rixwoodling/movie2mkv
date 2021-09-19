@@ -1,5 +1,5 @@
 #!/bin/bash
-# movie2mkv v5
+# movie2mkv v6
 
 # automatically convert or copy all streams of a movie file into mkv
 
@@ -37,7 +37,7 @@ else deint=$( echo -n "" )
 fi
 
 # define crop dimensions and assign to options variable
-vfcrop=$( ffmpeg -i "$1" -t 300 -vf cropdetect -f null - 2>&1 | awk '/crop/ { print $NF }' | tail -1 )
+vfcrop=$( ffmpeg -i "$1" -t 3 -vf cropdetect -f null - 2>&1 | awk '/crop/ { print $NF }' | tail -1 )
 options=$( echo -n "-probesize 100M -analyzeduration 100M -pix_fmt + -vf "$vfcrop $deint "-map_metadata 0 -vsync vfr " )
 
 # assign video options to videostream variable
@@ -64,7 +64,9 @@ while true; do
             map+=$( echo -n '-map 0:a:'$a' ' )
         else
             audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries stream=channels -of default=noprint_wrappers=1:nokey=1 "$1" )
-            aud+=$( echo -n '-ac '$audiostreams' ' )
+            if [[ $audiostreams -eq 6 ]]; then audiobitrate='-b:a 384k -ar 48000 '
+            else audiobitrate=""; fi
+            aud+=$( echo -n '-ac '$audiostreams' '"$audiobitrate" )
             map+=$( echo -n '-map 0:a:'$a' ' )
         fi
     else
@@ -102,5 +104,4 @@ echo -n "ffmpeg -i $1 "; echo -n "$options"; echo -n "$maps"; echo -n "$videostr
 echo -n "$audiostreams"; echo -n "$subtitlestreams"; echo -n "$1.mkv"; echo
 
 ffmpeg -i $1 $options $maps $videostream $audiostreams $subtitlestreams $1.mkv
-
 
