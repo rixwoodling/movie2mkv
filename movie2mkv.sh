@@ -39,8 +39,6 @@ options=$( echo -n '-pix_fmt + -vf '$vfcrop $deint '-map_metadata 0 -vsync vfr '
 
 ### --- VIDEO AUDIO SUBTITLES --- ###
 
-map=() # define empty map array
-
 # VIDEOSTREAMS
 v=0
 vid=()
@@ -48,7 +46,6 @@ while [ ! "$v" -eq 1 ]; do
     lang=$( ffprobe -i $1 v:$v -loglevel quiet -show_entries stream_tags=language -select_streams v -of default=noprint_wrappers=1:nokey=1 )
     if [ -z $lang ]; then lang="und"; fi
     vid+=$( echo -n '-c:v libx264 -b:v:'$v' 8M -tune film -vprofile high -vlevel 4.0 -metadata:s:v:'$v' language='$lang )
-    map+=$( echo -n "-map 0:v:$v " )
     v=$(( v + 1 ))
 done
 videostream="${vid[@]}"
@@ -64,18 +61,14 @@ while true; do
     if [[ ! -z $audioformat ]]; then
         if [[ "$audioformat" == "dts" || "$audioformat" == "ac3" || "$audioformat" == "flac" ]]; then
             aud+=$( echo -n '-c:a:'$a' copy ' )
-            map+=$( echo -n '-map 0:a:'$a' ' )
         else
             audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries program_stream=channels -of default=noprint_wrappers=1:nokey=1 "$1" )
             if [[ $audiostreams -eq 6 ]]; then
-                audiobitrate='-b:a 384k -ar 48000 '
+                aud+=$( echo -n '-ac 6 -b:a 384k -ar 48000 -metadata:s:a:'$a' language='$lang' ' )
             else
-                audiobitrate='2 '
+                aud+=$( echo -n '-ac 2 -metadata:s:a:'$a' language='$lang' ' )
             fi
-            aud+=$( echo -n '-ac '$audiostreams' '"$audiobitrate" )
-            map+=$( echo -n '-map 0:a:'$a' ' )
         fi
-    aud+=$( echo -n '-metadata:s:a:'$a' language='$lang' ' )
     else
         break
     fi
@@ -92,9 +85,7 @@ while true; do
     if [ -z $lang ]; then lang="und"; fi
     subtitlestreams=$( ffprobe -select_streams s:$s -v error -show_entries stream=index -of default=noprint_wrappers=1:nokey=1 "$1" )
     if [[ ! -z $subtitlestreams ]]; then
-        sub+=$( echo -n '-c:s:'$s' copy ' )
-        sub+=$( echo -n '-metadata:s:s:'$s' language='$lang' ' )
-        map+=$( echo -n "-map 0:s:$s "  )
+        sub+=$( echo -n '-c:s:'$s' copy -metadata:s:s:'$s' language='$lang' ' )
         s=$(( s + 1 ))
     else
         break
@@ -108,13 +99,11 @@ subtitlestreams="${sub[@]}"
 echo "ffmpeg -i $1"
 echo "$options"
 echo "-map 0"
-#echo "${map[@]}"
 if [ ! -z "${vid[@]}" ]; then echo "${vid[@]}"; fi
 if [ ! -z "${aud[@]}" ]; then echo "${aud[@]}" | sed 's/-c/\n-c/2g'; fi
 if [ ! -z "${sub[@]}" ]; then echo "${sub[@]}" | sed 's/-c/\n-c/2g'; fi
 echo "$1.mkv"; echo
 
-#maps="${map[@]}"
 maps="-map 0"
 
 ffmpeg -probesize 100M -analyzeduration 100M -i $1 $options -loglevel warning -stats $maps $videostream $audiostreams $subtitlestreams $1.mkv
