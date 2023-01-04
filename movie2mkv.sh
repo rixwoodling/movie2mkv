@@ -1,74 +1,81 @@
 #!/bin/bash
-# movie2mkv v6
+# movie2mkv v7
 
 # automatically convert or copy all streams of a movie file into mkv
 
-### error handling ###
+
+### --- ERROR HANDLING --- ###
 
 # tested with ffmpeg 3.2.15-0+deb9u2
-if ! command -v ffmpeg &> /dev/null; then
-    echo "ffmpeg is not installed"
-    exit 1
-elif ! command -v ffprobe &> /dev/null; then
-    echo "ffprobe is not installed"
-    exit 1
-fi
+if ! command -v ffmpeg &>/dev/null; then echo "ffmpeg is not installed"; exit 1
+else echo -n "ffmpeg version "; echo $( ffmpeg -version | head -n1 | awk '{print $3}' ); fi
 
-# accepts only one file a time
-if [[ -z "$1" ]]; then
-    echo "command requires 1 argument"
-    exit 1
-elif [[ ! -z "$2" ]]; then
-    echo "command requires no more than 1 argument"
-    exit 1
-fi
+if [[ -z "$1" ]]; then echo "command requires 1 argument"; exit 1
+elif [[ ! -z "$2" ]]; then echo "command requires no more than 1 argument"; exit 1; fi
 
 
-### variables and arrays ###
+### probe movie for specs ###
+#if [ -f ./movie2probe.sh ]; then ./movie2probe.sh $1
+#else pass; fi
 
-# define empty map array
-map=()
+
+### --- OPTIONS --- ###
 
 # define if deinterlacing is required
 deint=$( ffmpeg -hide_banner -filter:v idet -frames:v 100 -an -f rawvideo -y /dev/null -i "$1" 2>&1 | grep -m 1 BFF | sed 's/.*TFF\:\ *//' | sed 's/[^0-9].*//' )
 if [ ! "$deint" -eq 0 ]; then
     deint=$( echo -n "-vf bwdif=mode=0" )
-else deint=$( echo -n "" )
+    echo -n "deinterlacing needed, and "
+else
+    deint=$( echo -n "" )
+    echo -n "no deinterlacing needed, but "
 fi
 
 # define crop dimensions and assign to options variable
+echo "detecting crop dimensions, please wait..."; echo
 vfcrop=$( ffmpeg -i "$1" -t 300 -vf cropdetect -f null - 2>&1 | awk '/crop/ { print $NF }' | tail -1 )
-options=$( echo -n "-probesize 100M -analyzeduration 100M -pix_fmt + -vf "$vfcrop $deint "-map_metadata 0 -vsync vfr " )
+options=$( echo -n '-pix_fmt + -vf '$vfcrop $deint '-map_metadata 0 -vsync vfr ' )
 
-# assign video options to videostream variable
+
+### --- VIDEO AUDIO SUBTITLES --- ###
+
+map=() # define empty map array
+
+# VIDEOSTREAMS
 v=0
 vid=()
 while [ ! "$v" -eq 1 ]; do
-    vid+=$( echo -n '-c:v libx264 -b:v:'$v' 8M -tune film -vprofile high -vlevel 4.0 ' )
+    lang=$( ffprobe -i $1 v:$v -loglevel quiet -show_entries stream_tags=language -select_streams v -of default=noprint_wrappers=1:nokey=1 )
+    if [ -z $lang ]; then lang="und"; fi
+    vid+=$( echo -n '-c:v libx264 -b:v:'$v' 8M -tune film -vprofile high -vlevel 4.0 -metadata:s:v:'$v' language='$lang )
     map+=$( echo -n "-map 0:v:$v " )
     v=$(( v + 1 ))
 done
 videostream="${vid[@]}"
 
-
-
-# loop through audio streams and either convert or copy back to audiostream variable(s)
+# AUDIOSTREAMS
 a=0
 f=1
 aud=()
 while true; do
+    lang=$( ffprobe -i $1 a:$a -loglevel quiet -show_entries stream_tags=language -select_streams a -of default=noprint_wrappers=1:nokey=1 )
+    if [ -z $lang ]; then lang="und"; fi
     audioformat=$( ffmpeg -filter:v idet -frames:v 100 -f rawvideo -y /dev/null -i "$1" 2>&1 | grep "Audio:\ *" | grep "#0:"$f | awk '{print $4}' | sed 's/[^a-zA-Z0-9]//g' )
     if [[ ! -z $audioformat ]]; then
-        if [[ "$audioformat" == "dtsx" || "$audioformat" == "ac3x" || "$audioformat" == "flacx" ]]; then
+        if [[ "$audioformat" == "dts" || "$audioformat" == "ac3" || "$audioformat" == "flac" ]]; then
             aud+=$( echo -n '-c:a:'$a' copy ' )
             map+=$( echo -n '-map 0:a:'$a' ' )
         else
-            audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries stream=channels -of default=noprint_wrappers=1:nokey=1 "$1" )
-            if [[ $audiostreams -eq 6 ]]; then audiobitrate='-b:a 384k -ar 48000 '
-            else audiobitrate=""; fi
+            audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries program_stream=channels -of default=noprint_wrappers=1:nokey=1 "$1" )
+            if [[ $audiostreams -eq 6 ]]; then
+                audiobitrate='-b:a 384k -ar 48000 '
+            else
+                audiobitrate='2 '
+            fi
             aud+=$( echo -n '-ac '$audiostreams' '"$audiobitrate" )
             map+=$( echo -n '-map 0:a:'$a' ' )
         fi
+    aud+=$( echo -n '-metadata:s:a:'$a' language='$lang' ' )
     else
         break
     fi
@@ -77,31 +84,40 @@ while true; do
 done
 audiostreams="${aud[@]}"
 
-
-
-# loop through subtitle streams and assign back to subtitlestream variable
+# SUBTITLES
 s=0
 sub=()
 while true; do
+    lang=$( ffmpeg -i $1 s:$s -loglevel quiet -show_entries stream_tags=language -select_streams s -of default=noprint_wrappers=1:nokey=1 )
+    if [ -z $lang ]; then lang="und"; fi
     subtitlestreams=$( ffprobe -select_streams s:$s -v error -show_entries stream=index -of default=noprint_wrappers=1:nokey=1 "$1" )
     if [[ ! -z $subtitlestreams ]]; then
         sub+=$( echo -n '-c:s:'$s' copy ' )
+        sub+=$( echo -n '-metadata:s:s:'$s' language='$lang' ' )
         map+=$( echo -n "-map 0:s:$s "  )
+        s=$(( s + 1 ))
     else
         break
     fi
-    s=$(( s + 1 ))
 done
 subtitlestreams="${sub[@]}"
 
-# map streams collected in array assigned to variable
-maps="${map[@]}"
+
+### --- STDOUT --- ###
+
+echo "ffmpeg -i $1"
+echo "$options"
+echo "-map 0"
+#echo "${map[@]}"
+if [ ! -z "${vid[@]}" ]; then echo "${vid[@]}"; fi
+if [ ! -z "${aud[@]}" ]; then echo "${aud[@]}" | sed 's/-c/\n-c/2g'; fi
+if [ ! -z "${sub[@]}" ]; then echo "${sub[@]}" | sed 's/-c/\n-c/2g'; fi
+echo "$1.mkv"; echo
+
+#maps="${map[@]}"
+maps="-map 0"
+
+ffmpeg -probesize 100M -analyzeduration 100M -i $1 $options -loglevel warning -stats $maps $videostream $audiostreams $subtitlestreams $1.mkv
 
 
-### main ###
-
-echo -n "ffmpeg -i $1 "; echo -n "$options"; echo -n "$maps"; echo -n "$videostream"
-echo -n "$audiostreams"; echo -n "$subtitlestreams"; echo -n "$1.mkv"; echo
-
-ffmpeg -i $1 $options $maps $videostream $audiostreams $subtitlestreams $1.mkv
 
