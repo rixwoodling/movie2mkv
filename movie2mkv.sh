@@ -59,7 +59,7 @@ while true; do
     if [ -z $lang ]; then lang="und"; fi
     audioformat=$( ffmpeg -filter:v idet -frames:v 100 -f rawvideo -y /dev/null -i "$1" 2>&1 | grep "Audio:\ *" | grep "#0:"$f | awk '{print $4}' | sed 's/[^a-zA-Z0-9]//g' )
     if [[ ! -z $audioformat ]]; then
-        if [[ "$audioformat" == "dts" || "$audioformat" == "ac3" || "$audioformat" == "flac" ]]; then
+        if [[ "$audioformat" == "dts" || "$audioformat" == "ac3" || "$audioformat" == "aac" ]]; then
             aud+=$( echo -n '-c:a:'$a' copy ' )
         else
             audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries program_stream=channels -of default=noprint_wrappers=1:nokey=1 "$1" )
