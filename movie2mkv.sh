@@ -64,9 +64,9 @@ while true; do
         else
             audiostreams=$( ffprobe -select_streams a:$a -v error -show_entries program_stream=channels -of default=noprint_wrappers=1:nokey=1 "$1" )
             if [[ $audiostreams -eq 6 ]]; then
-                aud+=$( echo -n '-ac 6 -b:a 384k -ar 48000 -metadata:s:a:'$a' language='$lang' ' )
+                aud+=$( echo -n '-ac 6 aac -b:a 384k -ar 48000 -metadata:s:a:'$a' language='$lang' ' )
             else
-                aud+=$( echo -n '-ac 2 -metadata:s:a:'$a' language='$lang' ' )
+                aud+=$( echo -n '-ac 2 aac -b:a 384k -ar 48000 -metadata:s:a:'$a' language='$lang' ' )
             fi
         fi
     else
