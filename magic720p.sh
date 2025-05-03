@@ -49,7 +49,7 @@ ffmpeg -fflags +genpts -analyzeduration 100M -probesize 100M -i "$input" \
   -map 0:v:0 -map 0:a:0 \
   -vf "$crop,$scale,setsar=1" \
   -c:v libx264 -b:v 1600k -maxrate 1750k -bufsize 3500k \
-  -c:a aac -b:a 128k \
+  -c:a aac -b:a 192k \
   -movflags +faststart -avoid_negative_ts make_zero \
   "$output"
 
