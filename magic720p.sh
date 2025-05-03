@@ -14,7 +14,7 @@ start="00:00:00.000"
 duration="10:00:00.000"
 cropdetect_time="00:01:00.000"  # 25s after the actual start time
 
-echo "Scanning crop values from '$input' at $cropdetect_time..."
+echo 'Scanning crop values from '"$input"' at '"$cropdetect_time"'...'
 
 crop=$(ffmpeg -fflags +genpts -analyzeduration 100M -probesize 100M -ss "$cropdetect_time" -i "$input" -t 10 -vf cropdetect -f null - 2>&1 \
   | grep -oP "crop=\d+:\d+:\d+:\d+" | tail -1)
@@ -55,17 +55,5 @@ ffmpeg -fflags +genpts -analyzeduration 100M -probesize 100M -i "$input" \
 
 echo "Done. Output saved to: $output"
 
-echo "Checking peak bitrate..."
-peak=$(ffmpeg -v error -i "$output" -f null - 2>&1 \
-  | grep bitrate= \
-  | sed -n 's/.*bitrate=\([0-9]*\) kb\/s.*/\1/p' \
-  | sort -nr | head -1)
 
-echo "Max muxed bitrate: ${peak} kbps"
-
-if (( peak > 2000 )); then
-  echo "WARNING: Bitrate exceeds safe Plex Relay limits (2Mbps)"
-else
-  echo "Bitrate is safe for Plex Relay"
-fi
 
