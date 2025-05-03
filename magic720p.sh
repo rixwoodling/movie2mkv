@@ -14,7 +14,7 @@ start="00:00:00.000"
 duration="10:00:00.000"
 cropdetect_time="00:01:00.000"  # 25s after the actual start time
 
-echo 'Scanning crop values from '"$input"' at '"$cropdetect_time"'...'
+echo "Scanning crop values from '$input' at $cropdetect_time..."
 
 crop=$(ffmpeg -fflags +genpts -analyzeduration 100M -probesize 100M -ss "$cropdetect_time" -i "$input" -t 10 -vf cropdetect -f null - 2>&1 \
   | grep -o "crop=[0-9]\+:[0-9]\+:[0-9]\+:[0-9]\+" | tail -1)
