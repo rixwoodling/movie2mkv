@@ -32,10 +32,10 @@ IFS=":" read -r crop_w crop_h crop_x crop_y <<< "$(echo "$crop" | cut -d= -f2)"
 # Decide how to scale
 if [[ "$crop_w" -lt 1920 && "$crop_h" -eq 1080 ]]; then
   echo "Detected pillarbox. Scaling by height to 720..."
-  scale="scale=-1:720"
+  scale="scale=-2:720"
 elif [[ "$crop_h" -lt 1080 && "$crop_w" -eq 1920 ]]; then
   echo "Detected letterbox. Scaling by width to 1280..."
-  scale="scale=1280:-1"
+  scale="scale=1280:-2"
 else
   echo "No black bars detected. Scaling to 1280x720..."
   scale="scale=1280:720"
