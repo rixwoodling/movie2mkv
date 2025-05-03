@@ -48,9 +48,24 @@ ffmpeg -fflags +genpts -analyzeduration 100M -probesize 100M -i "$input" \
   -ss "$start" -to "$duration" \
   -map 0:v:0 -map 0:a:0 \
   -vf "$crop,$scale,setsar=1" \
-  -c:v libx264 -b:v 1700k -maxrate 1800k -bufsize 3600k \
+  -c:v libx264 -b:v 1600k -maxrate 1750k -bufsize 3500k \
   -c:a aac -b:a 128k \
   -movflags +faststart -avoid_negative_ts make_zero \
   "$output"
 
 echo "Done. Output saved to: $output"
+
+echo "Checking peak bitrate..."
+peak=$(ffmpeg -v error -i "$output" -f null - 2>&1 \
+  | grep bitrate= \
+  | sed -n 's/.*bitrate=\([0-9]*\) kb\/s.*/\1/p' \
+  | sort -nr | head -1)
+
+echo "Max muxed bitrate: ${peak} kbps"
+
+if (( peak > 2000 )); then
+  echo "WARNING: Bitrate exceeds safe Plex Relay limits (2Mbps)"
+else
+  echo "Bitrate is safe for Plex Relay"
+fi
+
