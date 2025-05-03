@@ -17,7 +17,7 @@ cropdetect_time="00:01:00.000"  # 25s after the actual start time
 echo 'Scanning crop values from '"$input"' at '"$cropdetect_time"'...'
 
 crop=$(ffmpeg -fflags +genpts -analyzeduration 100M -probesize 100M -ss "$cropdetect_time" -i "$input" -t 10 -vf cropdetect -f null - 2>&1 \
-  | grep -oP "crop=\d+:\d+:\d+:\d+" | tail -1)
+  | grep -o "crop=[0-9]\+:[0-9]\+:[0-9]\+:[0-9]\+" | tail -1)
 
 if [[ -z "$crop" ]]; then
   echo "Could not auto-detect crop, aborting..."
